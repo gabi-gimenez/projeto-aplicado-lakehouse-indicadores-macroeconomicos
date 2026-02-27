@@ -7,6 +7,7 @@ from datetime import datetime
 BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{}/dados"
 
 # Códigos das séries
+
 SERIES = {
     "selic": 11,
     "ipca": 433,
