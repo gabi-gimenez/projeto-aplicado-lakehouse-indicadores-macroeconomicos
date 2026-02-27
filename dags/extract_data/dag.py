@@ -41,7 +41,6 @@ for name, code in SERIES.items():
     df = df.rename(columns={"valor": name})
     dfs[name] = df[["data", name]]
 
-# Merge das séries por data
 df_final = dfs["selic"]
 
 for name in ["ipca", "dolar"]:
