@@ -22,6 +22,11 @@ Deploy Your Project Locally
 
 Start Airflow on your local machine by running 'astro dev start'.
 
+Before running local services, configure your local `.env` file:
+
+- Fill secret values such as `MINIO_SECRET_KEY` and `MINIO_ROOT_PASSWORD`
+- Keep `.env` local only (it is ignored by git)
+
 This command will spin up five Docker containers on your machine, each for a different Airflow component:
 
 - Postgres: Airflow's Metadata Database
