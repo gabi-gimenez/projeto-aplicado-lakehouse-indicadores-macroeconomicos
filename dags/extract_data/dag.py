@@ -23,7 +23,6 @@ API_BASE_URLS = tuple(
 TARGET_BUCKET = minio_config_from_env().bucket
 ENDPOINTS = ("users", "carts", "products")
 
-
 def _sql_quote(value: str) -> str:
     return value.replace("'", "''")
 
