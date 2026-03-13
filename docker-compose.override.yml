@@ -1,0 +1,78 @@
+services:
+  scheduler:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      LAKEHOUSE_BUCKET: ${LAKEHOUSE_BUCKET}
+
+  webserver:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      LAKEHOUSE_BUCKET: ${LAKEHOUSE_BUCKET}
+
+  triggerer:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      LAKEHOUSE_BUCKET: ${LAKEHOUSE_BUCKET}
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
+        echo 'Aguardando MinIO ficar disponivel...';
+        sleep 2;
+      done &&
+      mc mb --ignore-existing local/${LAKEHOUSE_BUCKET} &&
+      mc policy set private local/${LAKEHOUSE_BUCKET}
+      "
+    restart: on-failure
+
+  iceberg-rest: 
+    image: tabulario/iceberg-rest:latest
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_REGION: ${AWS_REGION}
+      CATALOG_WAREHOUSE: s3://${LAKEHOUSE_BUCKET}/warehouse
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: ${CATALOG_S3_ENDPOINT}
+      CATALOG_S3_PATH_STYLE_ACCESS: ${CATALOG_S3_PATH_STYLE_ACCESS}
+    ports:
+      - "8181:8181"
+    depends_on:
+      - minio
+      - minio-init
+
+volumes:
+  minio_data:
